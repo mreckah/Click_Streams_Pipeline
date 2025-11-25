@@ -8,6 +8,8 @@ import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,8 +30,20 @@ public class ClickController {
     }
 
     @GetMapping("/click")
-    public String click(@RequestParam(defaultValue = "anonymous") String userId) {
+    public ResponseEntity<String> click(@RequestParam(value = "userId", defaultValue = "anonymous") String userId) {
         try {
+            if (kafkaTemplate == null) {
+                logger.error("KafkaTemplate is null!");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error: KafkaTemplate is not initialized");
+            }
+            
+            if (clicksTopic == null || clicksTopic.isEmpty()) {
+                logger.error("Clicks topic is null or empty!");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error: Clicks topic is not configured");
+            }
+            
             logger.info("Attempting to send click for user: {} to topic: {}", userId, clicksTopic);
             CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(clicksTopic, userId, "click");
             
@@ -38,22 +52,27 @@ public class ClickController {
                 SendResult<String, String> result = future.get(5, TimeUnit.SECONDS);
                 logger.info("Click sent successfully for user: {} to topic: {} at offset: {}", 
                     userId, clicksTopic, result.getRecordMetadata().offset());
-                return "Click sent for user: " + userId;
+                return ResponseEntity.ok("Click sent for user: " + userId);
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
+                String errorMsg = cause != null ? cause.getMessage() : e.getMessage();
                 logger.error("Failed to send click for user: {} to topic: {}", userId, clicksTopic, cause);
-                return "Error sending click: " + (cause != null ? cause.getMessage() : e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error sending click: " + errorMsg);
             } catch (TimeoutException e) {
                 logger.error("Timeout sending click for user: {} to topic: {}", userId, clicksTopic, e);
-                return "Timeout sending click. Message may still be sent.";
+                return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT)
+                    .body("Timeout sending click. Message may still be sent.");
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 logger.error("Interrupted while sending click for user: {} to topic: {}", userId, clicksTopic, e);
-                return "Interrupted while sending click.";
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Interrupted while sending click.");
             }
         } catch (Exception e) {
             logger.error("Error sending click for user: {}", userId, e);
-            return "Error sending click: " + e.getMessage();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error sending click: " + e.getMessage() + " (Type: " + e.getClass().getSimpleName() + ")");
         }
     }
 }

@@ -5,4 +5,5 @@ com\example\clickstream\ClickCountStream.class
 com\example\clickstream\HomeController.class
 com\example\clickstream\ClickController.class
 com\example\clickstream\ClickCountController.class
+com\example\clickstream\GlobalExceptionHandler.class
 com\example\clickstream\ClickCountResponse.class
