@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Click Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+        }
+        #perUserTable {
+            margin-top: 1rem;
+            border-collapse: collapse;
+        }
+        #perUserTable th, #perUserTable td {
+            border: 1px solid #ddd;
+            padding: 0.5rem 1rem;
+        }
+    </style>
+    <script>
+        async function sendClick() {
+            const userId = document.getElementById("userId").value || "user1";
+            const response = await fetch(`/click?userId=${userId}`);
+            const text = await response.text();
+            document.getElementById("message").innerText = text;
+        }
+
+        async function refreshCounts() {
+            const response = await fetch(`/clicks/count`);
+            const payload = await response.json();
+            document.getElementById("totalClicks").innerText = payload.total ?? 0;
+            renderPerUser(payload.perUser);
+        }
+
+        function renderPerUser(perUser = {}) {
+            const tableBody = document.getElementById("perUserBody");
+            tableBody.innerHTML = "";
+            Object.entries(perUser).forEach(([user, count]) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `<td>${user}</td><td>${count}</td>`;
+                tableBody.appendChild(row);
+            });
+        }
+
+        setInterval(refreshCounts, 1000);
+        window.onload = refreshCounts;
+    </script>
+</head>
+<body>
+    <h1>Click Tracker</h1>
+    <input type="text" id="userId" placeholder="Enter your userId"/>
+    <button onclick="sendClick()">Click Me!</button>
+    <p id="message"></p>
+    <h2>Total Clicks: <span id="totalClicks">0</span></h2>
+    <h3>Per-user counts</h3>
+    <table id="perUserTable">
+        <thead>
+        <tr>
+            <th>User</th>
+            <th>Clicks</th>
+        </tr>
+        </thead>
+        <tbody id="perUserBody"></tbody>
+    </table>
+</body>
+</html>
