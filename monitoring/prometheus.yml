@@ -10,6 +10,13 @@ scrape_configs:
     static_configs:
       - targets: ['kafka-exporter:9308']
 
+  - job_name: 'click-streams-app'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s
+    scrape_timeout: 5s
+
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
