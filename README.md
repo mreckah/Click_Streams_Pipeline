@@ -1,6 +1,3 @@
-Got it! Here’s a cleaned-up version keeping the **screens references** in each part but removing the detailed config instructions:
-
----
 
 # Click Streams Pipeline – Real-Time Click Counter
 
@@ -12,9 +9,8 @@ This project implements a Kafka Streams application that counts user clicks in r
 
 ## Architecture
 <div align="center">
-  <img src="screens/arch.png" alt="Apache Kafka Logo" width="400" height="200">
+  <img src="screens/arch.png" alt="Apache Kafka Logo"  height="400">
 </div>
-![alt text](image.png)
 ---
 
 ## Topics
